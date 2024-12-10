@@ -1,6 +1,6 @@
-import 'dotenv/config' // To read CLERK_SECRET_KEY and CLERK_PUBLISHABLE_KEY
-import express, { Express, Request, Response, NextFunction } from "express";
-import { clerkMiddleware, ExpressRequestWithAuth, getAuth } from '@clerk/express';
+import 'dotenv/config'
+import express, { Express, Response } from "express";
+import { clerkMiddleware, ExpressRequestWithAuth } from '@clerk/express';
 import cors from 'cors'
 import requireAuth from "./middleware/requireAuth";
 import jsonwebtoken from "jsonwebtoken";
