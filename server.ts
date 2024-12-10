@@ -4,6 +4,8 @@ import { clerkMiddleware, ExpressRequestWithAuth } from '@clerk/express';
 import cors from 'cors'
 import requireAuth from "./middleware/requireAuth";
 import jsonwebtoken from "jsonwebtoken";
+import * as querystring from "node:querystring";
+import axios from "axios";
 const { sign } = jsonwebtoken;
 
 const port = process.env.PORT || 3000
@@ -16,8 +18,6 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions))
 app.use(clerkMiddleware())
-
-// console.log(process.env.APPLE_DEV_TOKEN);
 
 app.get('/auth-state', (req: ExpressRequestWithAuth, res: Response) => {
     const authState = req.auth
@@ -36,7 +36,36 @@ const apple_token = sign({}, process.env.APPLE_DEV_TOKEN!, {
 
 app.get('/apple-token', requireAuth, (req: ExpressRequestWithAuth, res: Response) => {
     res.json({token: apple_token});
-})
+});
+
+app.get('/spotify-login', requireAuth, (req: ExpressRequestWithAuth, res: Response) => {
+    res.redirect("https://accounts.spotify.com/authorize?") + querystring.stringify({
+            response_type: 'code',
+            client_id: process.env.SPOTIFY_CLIENT_ID!,
+            scope: "user-read-private user-read-email user-library-read playlist-read-private",
+            redirect_uri: process.env.SPOTIFY_REDIRECT_URI!
+        })
+});
+
+app.get("/spotify-callback", requireAuth, (req: ExpressRequestWithAuth, res: Response) => {
+    const code = req.query.code || null;
+    const authOptions = {
+        form: {
+            code: code,
+            redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
+            grant_type: "authorization_code",
+        },
+        headers: {
+            "Authorization": "Basic" + (Buffer.from(`${process.env.SPOTIFY_CLIENT_ID!}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString("base64")),
+        },
+        json: true,
+    }
+    axios.post("https://accounts.spotify.com/api/token", authOptions)
+        .then((response) => {
+            const accessToken = response.data.access_token;
+            res.redirect(process.env.FRONTEND_URI + "?access_token=" + accessToken);
+        })
+});
 
 // // Use the strict middleware that throws when unauthenticated
 // app.get('/protected-auth-required', ClerkExpressRequireAuth(), (req, res) => {
