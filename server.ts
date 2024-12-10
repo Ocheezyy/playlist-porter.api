@@ -3,21 +3,21 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import { clerkMiddleware, ExpressRequestWithAuth, getAuth } from '@clerk/express';
 import cors from 'cors'
 import requireAuth from "./middleware/requireAuth";
-import { sign } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
+const { sign } = jsonwebtoken;
 
 const port = process.env.PORT || 3000
 
 const app: Express = express()
+const corsOptions: cors.CorsOptions = {
+    origin: ["http://localhost:5173", "http://localhost:3000"], // Replace with your frontend origin
+    allowedHeaders: ["Origin", "X-Requested-With", "Accept", "Content-Type", "Authorization"]
+};
 
-// const corsOptions: cors.CorsOptions = {
-//     origin: ["http://localhost:5173", "http://localhost:3000"], // Replace with your frontend origin
-//     allowedHeaders: ["Origin", "X-Requested-With", "Accept", "Content-Type", "Authorization"]
-// };
-
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(clerkMiddleware())
 
-console.log(process.env.APPLE_DEV_TOKEN);
+// console.log(process.env.APPLE_DEV_TOKEN);
 
 app.get('/auth-state', (req: ExpressRequestWithAuth, res: Response) => {
     const authState = req.auth
